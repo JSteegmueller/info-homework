@@ -147,7 +147,7 @@
 (: ->outbox instruction)
 (define ->outbox
   (make-instr "->outbox" (lambda (o) (match o
-                                       ((make-office in out  flo w l1 ip t)(if (empty? w) (violation "Worker has nothing to do") (make-office in (make-pair w out) flo empty l1 ip t)))))))
+                                       ((make-office in out  flo w l1 ip t)(if (empty? w) (violation "Worker has nothing to do") (make-office in (make-pair w out) flo #f l1 ip t)))))))
 
 ;------------------
 ; G
@@ -254,8 +254,7 @@
 (check-expect (ordinal "A") 1)
 (define ordinal
   (lambda (c)
-    (if (number? (string->number c)) (string->number c)
-    (+ (list-index (lambda (x) (string=? x c)) alphabet) 1))))
+    (+ (list-index (lambda (x) (string=? x c)) alphabet) 1)))
 
 (: sub (natural -> instruction))
 (define sub
@@ -266,7 +265,8 @@
                     (empty (violation "Nothing to subtract"))
                     (_ (match o
                          ((make-office in out flo w l1 ip t) (cond ((or (empty? w) (false? (list-ref flo x)))(violation "Floor oder Worker ist leer"))
-                                                                   (else (make-office in out flo (- (ordinal (if  (string? w) w (number->string w))) (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x))))) l1 ip t)))))))))))
+                                                                   (else (make-office in out flo (- (if (string? w) (ordinal w) w)
+                                                                                                    (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x))) l1 ip t)))))))))))
 
 (: add (natural -> instruction))
 (define add
@@ -277,7 +277,8 @@
                     (empty (violation "Nothing to add"))
                     (_ (match o
                          ((make-office in out flo w l1 ip t) (cond ((or (empty? w) (false? (list-ref flo x)))(violation "Floor oder Worker ist leer"))
-                                                                   (else (make-office in out flo (+ (ordinal (if  (string? w) w (number->string w))) (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x))))) l1 ip t)))))))))))
+                                                                   (else (make-office in out flo  (+ (if (string? w) (ordinal w) w)
+                                                                                                  (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x))) l1 ip t)))))))))))
 
 (: bump+ (natural -> instruction))
 (define bump+
@@ -287,7 +288,7 @@
                   (match (list-ref (floor-slots o) x)
                     (#f (violation "Nothing to bump"))
                     (_ (match o
-                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (+ 1 (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x)))))) w l1 ip t))))))))))
+                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (+ 1 (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x)) )) w l1 ip t))))))))))
 
 (: bump- (natural -> instruction))
 (define bump-
@@ -297,7 +298,7 @@
                   (match (list-ref (floor-slots o) x)
                     (#f (violation "Nothing to bump"))
                     (_ (match o
-                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (- (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x)))) 1)) w l1 ip t))))))))))
+                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (- (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x)) 1)) w l1 ip t))))))))))
 ;
 ; --------------------------------------------------------------------------------------------------------------
 ; Running the office
@@ -509,7 +510,7 @@
 
 
 ;(check-expect (outbox (perform-all day01)) (list 3 "E"))
-(start-office-day day01)
+(start-office-day day05)
 
 
 ; Exercises (h), (j), (m) and (o): implement and test the worker's instructions
