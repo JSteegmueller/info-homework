@@ -142,12 +142,11 @@
 ;------------
 ; A
 ; Worker gets an element out of inbox
-; BUG when inbox empty make-office instead of #f
 ;------------
 (: <-inbox instruction)
 (define <-inbox
   (make-instr "<-inbox" (lambda (o) (match o
-                                      ((make-office in out flo w l1 ip t) (if (empty? in) #f (make-office (rest in) out flo (first in) l1 ip (if (< t (- (length l1) 1)) (+ t 1) t))))))))
+                                      ((make-office in out flo w l1 ip t) (if (empty? in) (make-office in out flo w l1 #f t) (make-office (rest in) out flo (first in) l1 ip t)))))))
 ;------------
 ; B
 ; Worker puts an element into outbox and is empty afterwards
@@ -155,7 +154,7 @@
 (: ->outbox instruction)
 (define ->outbox
   (make-instr "->outbox" (lambda (o) (match o
-                                       ((make-office in out  flo w l1 ip t)(if (empty? w) (violation "Worker has nothing to do") (make-office in (make-pair w out) flo empty l1 ip (if (< t (- (length l1) 1)) (+ t 1) t))))))))
+                                       ((make-office in out  flo w l1 ip t)(if (empty? w) (violation "Worker has nothing to do") (make-office in (make-pair w out) flo empty l1 ip t)))))))
 
 ;------------------
 ; G
@@ -311,9 +310,6 @@
 ;-----------
 ; C
 ; Perform the action of the next instruction
-
-; BUG Programm exits with violation: list-ref: index too large for list (condition einbauen dass ip auf false gesetzt wird sobald ip > list index
-; BUG IF (or(false? ..... -> condition lösen da wenn ip #f muss ip #f bleiben und wenn string muss ip +1 springen
 ;-----------
 
 (: perform-next (office -> office))
@@ -321,10 +317,11 @@
   (lambda (o)
     (match o
       ((make-office in out flo w l1 ip t)
-       (if (or (false? ip) (string? (list-ref l1 ip)))
-           (make-office in out flo w l1 (+ ip 1) t)
-           ((action (list-ref l1 ip)) (make-office in out flo w l1 (+ ip 1) t) ))))
-    ))
+       (cond
+         ((false? ip) (make-office in out flo w l1 ip t))
+         ((= ip (length l1)) (make-office in out flo w l1 #f t)) 
+         ((string? (list-ref l1 ip)) (make-office in out flo w l1 (+ ip 1) t))
+         (else ((action (list-ref l1 ip)) (make-office in out flo w l1 (+ ip 1) (+ t 1)))))))))
 ;------------
 ; D
 ; Iteratively apply instructions to a given office
@@ -437,7 +434,7 @@
 
 
 (define day01
-  (make-office (list "E" 3) empty
+  (make-office (list 2) empty
                ; inbox , outbox
                (replicate 16 #f) #f ; floor , worker
                (list <-inbox
@@ -452,7 +449,7 @@
 
 
 (define day02
-  (make-office (list "E" 3 "41" -10 "1") empty    ; inbox, outbox
+  (make-office (list "E" 3 41 -10 1) empty    ; inbox, outbox
                (replicate 16 #f) #f  ; floor, worker
                (list "marke1"
                      <-inbox
@@ -462,7 +459,7 @@
                0 0))                 ; ip, time
 
 (define day03
-  (make-office (list "E" 3 "41" -10 "1") empty    ; inbox, outbox
+  (make-office (list "E" 3 41 -10 1) empty    ; inbox, outbox
                (replicate 16 #f) #f  ; floor, worker
                (list "marke1"
                      <-inbox
@@ -516,7 +513,7 @@
 
 
 ;(check-expect (outbox (perform-all day01)) (list 3 "E"))
-(start-office-day day05)
+(start-office-day day01)
 
 
 ; Exercises (h), (j), (m) and (o): implement and test the worker's instructions
