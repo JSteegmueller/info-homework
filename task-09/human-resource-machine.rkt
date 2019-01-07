@@ -1,6 +1,6 @@
 ;; Die ersten drei Zeilen dieser Datei wurden von DrRacket eingefügt. Sie enthalten Metadaten
 ;; über die Sprachebene dieser Datei in einer Form, die DrRacket verarbeiten kann.
-#reader(lib "DMdA-assignments-reader.ss" "deinprogramm")((modname human-resource-machine) (read-case-sensitive #f) (teachpacks ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm"))) (deinprogramm-settings #(#f write repeating-decimal #t #t none explicit #f ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm")))))
+#reader(lib "DMdA-vanilla-reader.ss" "deinprogramm")((modname human-resource-machine) (read-case-sensitive #f) (teachpacks ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm"))) (deinprogramm-settings #(#f write repeating-decimal #f #t none explicit #f ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm")))))
 ; --------------------------------------------------------------------------------------------------------------
 ; The office
 ; --------------------------------------------------------------------------------------------------------------
@@ -82,7 +82,13 @@
     (cond ((> from to) empty)
           (else (make-pair from (range (+ from 1) to))))))
 
-
+;Definiton for the function equal
+(: equal? ((mixed string number) (mixed string number) -> boolean))
+(define equal?
+  (lambda (x y)
+    (cond ((and (string? x) (string? y)) (string=? x y))
+          ((and (number? x) (number? y)) (= x y))
+          (else (violation "You did something wrong")))))
 
 ; Exercises (f) through (k): implement the higher-order procedures for list processing
 
@@ -136,6 +142,7 @@
 ;------------
 ; A
 ; Worker gets an element out of inbox
+; BUG when inbox empty make-office instead of #f
 ;------------
 (: <-inbox instruction)
 (define <-inbox
@@ -153,6 +160,7 @@
 ;------------------
 ; G
 ; Lets the worker jump to the next instruction
+; BUG equal? is not working with dMdA
 ;------------------
 (: jump (string -> instruction))
 (define jump
@@ -166,7 +174,7 @@
                                                                      w
                                                                      l1
                                                                      (+ 1 (list-index (lambda (elem)
-                                                                                        (eq? elem lbl)) l1))
+                                                                                        (equal? elem lbl)) l1))
                                                                      t)))))))
 
 ;------------
@@ -180,7 +188,7 @@
     (make-instr (string-append "jiz " lbl)
                 (lambda (ofc)
                   (match ofc
-                    ((make-office in out flo w l1 ip t) (if (eq? w 0) (make-office in out flo w l1 (+ 1 (list-index (lambda (elem) (string=? elem lbl)) l1)) t)
+                    ((make-office in out flo w l1 ip t) (if (equal? w 0) (make-office in out flo w l1 (+ 1 (list-index (lambda (elem) (string=? elem lbl)) l1)) t)
                                                             ofc)))))))
 
 (: jump-if-negative (string -> instruction))
@@ -252,7 +260,7 @@
 (define ordinal
   (lambda (c)
     (if (number? (string->number c)) (string->number c)
-    (+ (list-index (lambda (x) (eq? x c)) alphabet) 1))))
+    (+ (list-index (lambda (x) (equal? x c)) alphabet) 1))))
 
 (: sub (natural -> instruction))
 (define sub
@@ -303,6 +311,9 @@
 ;-----------
 ; C
 ; Perform the action of the next instruction
+
+; BUG Programm exits with violation: list-ref: index too large for list (condition einbauen dass ip auf false gesetzt wird sobald ip > list index
+; BUG IF (or(false? ..... -> condition lösen da wenn ip #f muss ip #f bleiben und wenn string muss ip +1 springen
 ;-----------
 
 (: perform-next (office -> office))
