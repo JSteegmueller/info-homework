@@ -82,13 +82,6 @@
     (cond ((> from to) empty)
           (else (make-pair from (range (+ from 1) to))))))
 
-;Definiton for the function equal
-(: equal? ((mixed string number) (mixed string number) -> boolean))
-(define equal?
-  (lambda (x y)
-    (cond ((and (string? x) (string? y)) (string=? x y))
-          ((and (number? x) (number? y)) (= x y))
-          (else (violation "You did something wrong")))))
 
 ; Exercises (f) through (k): implement the higher-order procedures for list processing
 
@@ -174,7 +167,10 @@
                                                                      w
                                                                      l1
                                                                      (+ 1 (list-index (lambda (elem)
-                                                                                        (equal? elem lbl)) l1))
+                                                                                        (if (string? elem)
+                                                                                            (if (string=? elem lbl) #t
+                                                                                                #f)
+                                                                                            #f)) l1))
                                                                      t)))))))
 
 ;------------
@@ -188,7 +184,7 @@
     (make-instr (string-append "jiz " lbl)
                 (lambda (ofc)
                   (match ofc
-                    ((make-office in out flo w l1 ip t) (if (equal? w 0) (make-office in out flo w l1 (+ 1 (list-index (lambda (elem) (string=? elem lbl)) l1)) t)
+                    ((make-office in out flo w l1 ip t) (if (= w 0) (make-office in out flo w l1 (+ 1 (list-index (lambda (elem) (string=? elem lbl)) l1)) t)
                                                             ofc)))))))
 
 (: jump-if-negative (string -> instruction))
@@ -260,7 +256,7 @@
 (define ordinal
   (lambda (c)
     (if (number? (string->number c)) (string->number c)
-    (+ (list-index (lambda (x) (equal? x c)) alphabet) 1))))
+    (+ (list-index (lambda (x) (string=? x c)) alphabet) 1))))
 
 (: sub (natural -> instruction))
 (define sub
