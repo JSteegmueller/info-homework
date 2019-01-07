@@ -431,7 +431,7 @@
 
 
 (define day01
-  (make-office (list 2) empty
+  (make-office (list "E" 3) empty
                ; inbox , outbox
                (replicate 16 #f) #f ; floor , worker
                (list <-inbox
