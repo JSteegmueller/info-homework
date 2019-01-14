@@ -1,6 +1,6 @@
 ;; Die ersten drei Zeilen dieser Datei wurden von DrRacket eingefügt. Sie enthalten Metadaten
 ;; über die Sprachebene dieser Datei in einer Form, die DrRacket verarbeiten kann.
-#reader(lib "DMdA-vanilla-reader.ss" "deinprogramm")((modname human-resource-machine) (read-case-sensitive #f) (teachpacks ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm"))) (deinprogramm-settings #(#f write repeating-decimal #f #t none explicit #f ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm")))))
+#reader(lib "DMdA-assignments-reader.ss" "deinprogramm")((modname human-resource-machine) (read-case-sensitive #f) (teachpacks ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm"))) (deinprogramm-settings #(#f write repeating-decimal #t #t none explicit #f ((lib "image2.rkt" "teachpack" "deinprogramm") (lib "universe.rkt" "teachpack" "deinprogramm")))))
 ; --------------------------------------------------------------------------------------------------------------
 ; The office
 ; --------------------------------------------------------------------------------------------------------------
@@ -83,6 +83,7 @@
           (else (make-pair from (range (+ from 1) to))))))
 
 
+
 ; Exercises (f) through (k): implement the higher-order procedures for list processing
 
 ;----------------
@@ -139,7 +140,7 @@
 (: <-inbox instruction)
 (define <-inbox
   (make-instr "<-inbox" (lambda (o) (match o
-                                      ((make-office in out flo w l1 ip t) (if (empty? in) (make-office in out flo w l1 #f t) (make-office (rest in) out flo (first in) l1 ip t)))))))
+                                      ((make-office in out flo w l1 ip t) (if (empty? in) #f (make-office (rest in) out flo (first in) l1 ip (if (< t (- (length l1) 1)) (+ t 1) t))))))))
 ;------------
 ; B
 ; Worker puts an element into outbox and is empty afterwards
@@ -147,12 +148,11 @@
 (: ->outbox instruction)
 (define ->outbox
   (make-instr "->outbox" (lambda (o) (match o
-                                       ((make-office in out  flo w l1 ip t)(if (empty? w) (violation "Worker has nothing to do") (make-office in (make-pair w out) flo #f l1 ip t)))))))
+                                       ((make-office in out  flo w l1 ip t)(if (empty? w) (violation "Worker has nothing to do") (make-office in (make-pair w out) flo empty l1 ip (if (< t (- (length l1) 1)) (+ t 1) t))))))))
 
 ;------------------
 ; G
 ; Lets the worker jump to the next instruction
-; BUG equal? is not working with dMdA
 ;------------------
 (: jump (string -> instruction))
 (define jump
@@ -166,10 +166,7 @@
                                                                      w
                                                                      l1
                                                                      (+ 1 (list-index (lambda (elem)
-                                                                                        (if (string? elem)
-                                                                                            (if (string=? elem lbl) #t
-                                                                                                #f)
-                                                                                            #f)) l1))
+                                                                                        (eq? elem lbl)) l1))
                                                                      t)))))))
 
 ;------------
@@ -183,7 +180,7 @@
     (make-instr (string-append "jiz " lbl)
                 (lambda (ofc)
                   (match ofc
-                    ((make-office in out flo w l1 ip t) (if (= w 0) (make-office in out flo w l1 (+ 1 (list-index (lambda (elem) (string=? elem lbl)) l1)) t)
+                    ((make-office in out flo w l1 ip t) (if (eq? w 0) (make-office in out flo w l1 (+ 1 (list-index (lambda (elem) (string=? elem lbl)) l1)) t)
                                                             ofc)))))))
 
 (: jump-if-negative (string -> instruction))
@@ -254,7 +251,8 @@
 (check-expect (ordinal "A") 1)
 (define ordinal
   (lambda (c)
-    (+ (list-index (lambda (x) (string=? x c)) alphabet) 1)))
+    (if (number? (string->number c)) (string->number c)
+    (+ (list-index (lambda (x) (eq? x c)) alphabet) 1))))
 
 (: sub (natural -> instruction))
 (define sub
@@ -265,8 +263,7 @@
                     (empty (violation "Nothing to subtract"))
                     (_ (match o
                          ((make-office in out flo w l1 ip t) (cond ((or (empty? w) (false? (list-ref flo x)))(violation "Floor oder Worker ist leer"))
-                                                                   (else (make-office in out flo (- (if (string? w) (ordinal w) w)
-                                                                                                    (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x))) l1 ip t)))))))))))
+                                                                   (else (make-office in out flo (- (ordinal (if  (string? w) w (number->string w))) (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x))))) l1 ip t)))))))))))
 
 (: add (natural -> instruction))
 (define add
@@ -277,8 +274,7 @@
                     (empty (violation "Nothing to add"))
                     (_ (match o
                          ((make-office in out flo w l1 ip t) (cond ((or (empty? w) (false? (list-ref flo x)))(violation "Floor oder Worker ist leer"))
-                                                                   (else (make-office in out flo  (+ (if (string? w) (ordinal w) w)
-                                                                                                  (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x))) l1 ip t)))))))))))
+                                                                   (else (make-office in out flo (+ (ordinal (if  (string? w) w (number->string w))) (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x))))) l1 ip t)))))))))))
 
 (: bump+ (natural -> instruction))
 (define bump+
@@ -288,7 +284,7 @@
                   (match (list-ref (floor-slots o) x)
                     (#f (violation "Nothing to bump"))
                     (_ (match o
-                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (+ 1 (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x)) )) w l1 ip t))))))))))
+                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (+ 1 (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x)))))) w l1 ip t))))))))))
 
 (: bump- (natural -> instruction))
 (define bump-
@@ -298,7 +294,7 @@
                   (match (list-ref (floor-slots o) x)
                     (#f (violation "Nothing to bump"))
                     (_ (match o
-                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (- (if (string? (list-ref flo x)) (ordinal (list-ref flo x)) (list-ref flo x)) 1)) w l1 ip t))))))))))
+                         ((make-office in out flo w l1 ip t) ((action (copy-from x)) (make-office in out (list-update flo x (- (ordinal (if (string? (list-ref flo x)) (list-ref flo x) (number->string (list-ref flo x)))) 1)) w l1 ip t))))))))))
 ;
 ; --------------------------------------------------------------------------------------------------------------
 ; Running the office
@@ -314,11 +310,10 @@
   (lambda (o)
     (match o
       ((make-office in out flo w l1 ip t)
-       (cond
-         ((false? ip) (make-office in out flo w l1 ip t))
-         ((= ip (length l1)) (make-office in out flo w l1 #f t)) 
-         ((string? (list-ref l1 ip)) (make-office in out flo w l1 (+ ip 1) t))
-         (else ((action (list-ref l1 ip)) (make-office in out flo w l1 (+ ip 1) (+ t 1)))))))))
+       (if (or (false? ip) (string? (list-ref l1 ip)))
+           (make-office in out flo w l1 (+ ip 1) t)
+           ((action (list-ref l1 ip)) (make-office in out flo w l1 (+ ip 1) t) ))))
+    ))
 ;------------
 ; D
 ; Iteratively apply instructions to a given office
@@ -446,7 +441,7 @@
 
 
 (define day02
-  (make-office (list "E" 3 41 -10 1) empty    ; inbox, outbox
+  (make-office (list "E" 3 "41" -10 "1") empty    ; inbox, outbox
                (replicate 16 #f) #f  ; floor, worker
                (list "marke1"
                      <-inbox
@@ -456,7 +451,7 @@
                0 0))                 ; ip, time
 
 (define day03
-  (make-office (list "E" 3 41 -10 1) empty    ; inbox, outbox
+  (make-office (list "E" 3 "41" -10 "1") empty    ; inbox, outbox
                (replicate 16 #f) #f  ; floor, worker
                (list "marke1"
                      <-inbox
