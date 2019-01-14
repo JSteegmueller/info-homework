@@ -1,6 +1,6 @@
 ;; Die ersten drei Zeilen dieser Datei wurden von DrRacket eingefügt. Sie enthalten Metadaten
 ;; über die Sprachebene dieser Datei in einer Form, die DrRacket verarbeiten kann.
-#reader(lib "DMdA-vanilla-reader.ss" "deinprogramm")((modname streams) (read-case-sensitive #f) (teachpacks ()) (deinprogramm-settings #(#f write repeating-decimal #t #t none explicit #f ())))
+#reader(lib "DMdA-vanilla-reader.ss" "deinprogramm")((modname streamsJ) (read-case-sensitive #f) (teachpacks ()) (deinprogramm-settings #(#f write repeating-decimal #t #t none explicit #f ())))
 ; ----------------------------------------------------------------------
 ; Streams (unendliche Ströme von Elementen gleicher Signatur)
 
@@ -49,4 +49,14 @@
 
 
 ;;; EIGENE LOESUNG AB HIER
+
+; (a) Diese Prozedur akzeptiert einen beliebigen Wert und erstellt daraus einen konstanten Stream
+(: const-stream (%a -> (stream-of %a)))
+(check-expect (stream-take 5 (const-stream 1))   (list 1 1 1 1 1))
+(check-expect (stream-take 5 (const-stream "a")) (list "a" "a" "a" "a" "a"))
+
+(define const-stream
+  (lambda (elem)
+    (make-cons elem (lambda () elem))))
+
 
