@@ -72,7 +72,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Eigene Lösung ab hier
 
-;Diese Funktion erstellt aus einem String einen Baum
+; Diese Funktion erstellt aus einem String einen Baum
 (: btree-parse (string -> (btree-of string)))
 (check-expect (btree-parse "_") the-empty-tree)
 (check-expect (btree-parse "(_1_)") (make-node the-empty-tree "1" the-empty-tree))
@@ -83,6 +83,11 @@
     (parser-output (parse (string->strings-list s)))))
 
 
+; Record für ein parser-tuple
+(: make-parser ((list-of string) (btree-of string) -> (parser-of (list-of string) (btree-of string))))
+(: parser? (any -> boolean))
+(: parser-input (parser -> (list-of string)))
+(: parser-output (parser -> (btree-of string)))
 (define-record-procedures-parametric parser parser-of
   make-parser
   parser?
@@ -90,7 +95,14 @@
    parser-output))
 
 
+; Diese Funktion parst genau ein Element einer Liste aus Strings auf einmal und Wertet das Ergebniss in ein parser-Record aus
 (: parse ((list-of string) -> (parser-of (list-of string) (btree-of string))))
+(check-expect (parse (list "(" "(" "_" "2" "_" ")" "3" "(" "_" "1" "_" ")" ")"))
+              (make-parser empty (make-node (make-node the-empty-tree "2" the-empty-tree) "3" (make-node the-empty-tree "1" the-empty-tree))))
+(check-expect (parse (list "_"))
+              (make-parser empty the-empty-tree))
+
+
 (define parse
   (lambda (cs)
     (let ((c (first cs)))
@@ -100,7 +112,7 @@
                       (x (first (parser-input l)))
                       (r (parse (rest (parser-input l)))))
                (make-parser (rest (parser-input r)) (make-node (parser-output l) x (parser-output r)))))
-        (wrong (violation (string-append "Fehler in der Eingabe: " wrong)))))))
+        (wrong (violation (string-append "Fehler in der Eingabe: " wrong))))))) 
                       
   
 
