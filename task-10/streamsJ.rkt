@@ -107,7 +107,7 @@
     (stream-converge delta (stream-iterate (lambda (x)
                                              (/ (+ x (/ a x)) 2)) (/ (+ a 1) 2)))))
 
-; 3 Diese Prozedur berechnet die Potenzmenge einer Menge M
+; 3 Diese Prozedur berechnet die Potenzmenge einer Menge M (Reihenfolge verkehrt!)
 (: powerset ((list-of %a) -> (list-of (list-of %a))))
 (check-expect (powerset (list 1 2 3)) (list (list 1 2 3) (list 1 2) (list 2 3) (list 1 3) (list 1) (list 2) (list 3) empty))
 (check-expect (powerset (list 1)) (list (list 1) empty))
@@ -119,12 +119,3 @@
       (empty (list empty))
       ((make-pair x xs) (append (powerset xs) (map (lambda (j)
                                                      (append (list x) j)) (powerset xs)))))))
-
-
-                               
-                               
-                               
-
-
-
-
