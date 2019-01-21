@@ -73,7 +73,7 @@
       ((make-empty-tree) +inf.0)
       ((make-node l val r) (min (btree-min l) val (btree-min r))))))
 
-; Diese Funktion ermittelt den minimalen Wert einer Markiereung eines B-Baumes
+; Diese Funktion ermittelt den maximalen Wert einer Markiereung eines B-Baumes
 (: btree-max ((btree-of real) -> real))
 (check-within (btree-max
                (make-node (make-node the-empty-tree 0 the-empty-tree) 2 (make-node the-empty-tree -1 the-empty-tree)))
